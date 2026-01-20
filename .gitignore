@@ -1,0 +1,81 @@
+# Xcode
+build/
+DerivedData/
+*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.xcuserdatad
+
+# Xcode project files that are user-specific
+*.xcworkspace
+!default.xcworkspace
+
+# SwiftPM
+.build/
+Packages/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Files that might contain sensitive data
+*.key
+*.p12
+*.mobileprovision
+*.cer
+*.pem
+*.env
+.env.*
+
+# Signing and provisioning
+*.provisionprofile
+
+# Archives
+*.xcarchive
+*.ipa
+
+# Logs
+*.log
+
+# Temporary files
+*.swp
+*~
+\.tmp/
+
+# IDEs
+.idea/
+.vscode/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager caches
+/.build/
+
+# Ignore compiled Swift modules
+*.swiftmodule
+*.swiftdoc
+
+# Ignore generated app icons (if using template tools)
+Assets.xcassets/AppIcon.appiconset/*-Unassigned.png
+
+# Misc
+coverage.txt
+xcpretty-report.html
