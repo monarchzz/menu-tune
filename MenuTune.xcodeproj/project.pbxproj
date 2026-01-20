@@ -21,22 +21,9 @@
 		D8A749682F188DDD008974A9 /* MenuTuneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuTuneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D8A749602F188CCC008974A9 /* Exceptions for "MenuTune" folder in "MenuTune" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/Info.plist,
-			);
-			target = D8A749492F188BCB008974A9 /* MenuTune */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D8A7494C2F188BCB008974A9 /* MenuTune */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				D8A749602F188CCC008974A9 /* Exceptions for "MenuTune" folder in "MenuTune" target */,
-			);
 			path = MenuTune;
 			sourceTree = "<group>";
 		};
