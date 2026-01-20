@@ -15,7 +15,7 @@
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
     <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
+    <string>15.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2025. All rights reserved.</string>
     <key>NSAppleEventsUsageDescription</key>

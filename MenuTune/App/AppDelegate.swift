@@ -180,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func preferencesAction() {
         Log.debug("Opening preferences", category: .app)
         popoverManager.dismiss()
-        preferencesWindowController.showWindow()
+        preferencesWindowController.showWindow(nil)
     }
 
     @objc private func quitAction() {

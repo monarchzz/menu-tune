@@ -7,6 +7,26 @@
 
 import SwiftUI
 
+// MARK: - Preferences Tab Enum
+
+enum PreferencesTab: String, CaseIterable, Identifiable {
+    case menuBar = "Menu Bar"
+    case appearance = "Appearance"
+    case general = "General"
+    case about = "About"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .menuBar: return "rectangle.topthird.inset.filled"
+        case .appearance: return "paintpalette"
+        case .general: return "gear"
+        case .about: return "info.circle"
+        }
+    }
+}
+
 // MARK: - Preferences View
 
 /// Settings window content for MenuTune preferences.
@@ -14,33 +34,34 @@ struct PreferencesView: View {
 
     @ObservedObject var preferences: PreferencesModel
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedTab: PreferencesTab = .menuBar
 
     // MARK: - Body
 
     var body: some View {
-        TabView {
-            menuBarTab
-                .tabItem {
-                    Label("Menu Bar", systemImage: "rectangle.topthird.inset.filled")
+        NavigationSplitView {
+            List(PreferencesTab.allCases, selection: $selectedTab) { tab in
+                Label(tab.rawValue, systemImage: tab.icon)
+                    .tag(tab)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 200)
+        } detail: {
+            Group {
+                switch selectedTab {
+                case .menuBar:
+                    menuBarTab
+                case .appearance:
+                    appearanceTab
+                case .general:
+                    generalTab
+                case .about:
+                    aboutTab
                 }
-
-            appearanceTab
-                .tabItem {
-                    Label("Appearance", systemImage: "paintpalette")
-                }
-
-            generalTab
-                .tabItem {
-                    Label("General", systemImage: "gear")
-                }
-
-            aboutTab
-                .tabItem {
-                    Label("About", systemImage: "info.circle")
-                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: 450, height: 350)
-        .padding()
+        .frame(width: 600, height: 450)
     }
 
     // MARK: - Tabs
@@ -57,7 +78,6 @@ struct PreferencesView: View {
             Section("Behavior") {
                 Toggle("Hide artist when paused", isOn: $preferences.hideArtistWhenPaused)
                 Toggle("Hide title when paused", isOn: $preferences.hideTitleWhenPaused)
-                // Toggle("Scroll long text", isOn: $preferences.scrollingText) // TODO: Implement marquee view
             }
 
             Section("Layout") {
