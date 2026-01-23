@@ -38,13 +38,28 @@ struct StatusItemView: View {
         HStack(spacing: spacing) {
             // Player app icon
             if displayOptions.showIcon {
-                playerIcon
+                let iconName = statusModel.playerIconName
+                if iconName.hasPrefix("sf.") {
+                    Image(systemName: String(iconName.dropFirst(3)))
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: iconSize, height: iconSize)
+                } else {
+                    Image(iconName)
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: iconSize, height: iconSize)
+                        .clipShape(Circle())
+                }
             }
 
             // Music note when playing
             if displayOptions.showMusicIcon {
                 Text("♫")
                     .font(.system(size: 12))
+                    .contentTransition(.symbolEffect(.replace))
             }
 
             // Artist - Title text
@@ -53,36 +68,17 @@ struct StatusItemView: View {
                     .font(.menuBarText(weight: preferences.menuBarFontWeight.weight))
                     .lineLimit(1)
                     .padding(.horizontal, preferences.compactView ? 0 : 4)
+                    .contentTransition(.interpolate)
+                    .animation(.spring(duration: 0.3), value: displayText)
             }
         }
         .frame(height: 22)
         .fixedSize()
     }
 
-    // MARK: - Player Icon
+    // MARK: - Preview
 
-    @ViewBuilder
-    private var playerIcon: some View {
-        let iconName = statusModel.playerIconName
-        if iconName.hasPrefix("sf.") {
-            // SF Symbol icon (for browser/generic sources)
-            Image(systemName: String(iconName.dropFirst(3)))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: iconSize, height: iconSize)
-        } else {
-            // Asset icon (for Spotify/Apple Music)
-            Image(iconName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: iconSize, height: iconSize)
-        }
-    }
+    // Preview disabled - requires full app context
+    //     StatusItemView(statusModel: StatusItemModel(), preferences: PreferencesModel())
+    // }
 }
-
-// MARK: - Preview
-
-// Preview disabled - requires full app context
-// #Preview {
-//     StatusItemView(statusModel: StatusItemModel(), preferences: PreferencesModel())
-// }

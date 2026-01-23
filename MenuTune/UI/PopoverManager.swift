@@ -21,6 +21,9 @@ final class PopoverManager {
     private let preferences: PreferencesModel
     private var cancellables = Set<AnyCancellable>()
 
+    /// Animation duration for show/hide transitions
+    private let animationDuration: TimeInterval = 0.2
+
     // MARK: - Initialization
 
     init<Content: View>(contentView: Content, preferences: PreferencesModel) {
@@ -28,19 +31,17 @@ final class PopoverManager {
         self.preferences = preferences
 
         setupObservers()
-
-        // Initial appearance update
         updateWindowAppearance()
     }
+
+    // MARK: - Observers
 
     private func setupObservers() {
         preferences.objectWillChange
             .receive(on: RunLoop.main)
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
             .sink { [weak self] _ in
-                // Defer slightly to ensure values are updated
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    self?.updateWindowAppearance()
-                }
+                self?.updateWindowAppearance()
             }
             .store(in: &cancellables)
     }
@@ -57,13 +58,14 @@ final class PopoverManager {
 
     /// Toggles the popover visibility relative to the status bar button.
     func toggle(relativeTo button: NSStatusBarButton?) {
-        guard let button = button else { return }
+        guard let button else { return }
 
         if window.isVisible {
             dismiss()
         } else {
             show(relativeTo: button)
         }
+
     }
 
     /// Dismisses the popover with animation.
@@ -71,11 +73,14 @@ final class PopoverManager {
         guard window.isVisible else { return }
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = animationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             window.animator().alphaValue = 0
         } completionHandler: { [weak self] in
-            self?.window.orderOut(nil)
-            self?.window.alphaValue = 1
+            Task { @MainActor in
+                self?.window.orderOut(nil)
+                self?.window.alphaValue = 1
+            }
         }
     }
 
@@ -86,6 +91,26 @@ final class PopoverManager {
             let screen = buttonWindow.screen
         else { return }
 
+        // Calculate position
+        let position = calculatePosition(for: button, in: screen, buttonWindow: buttonWindow)
+
+        // Show with animation
+        window.setFrameOrigin(position)
+        window.alphaValue = 0
+        window.makeKeyAndOrderFront(nil)
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = animationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            window.animator().alphaValue = 1
+        }
+    }
+
+    private func calculatePosition(
+        for button: NSStatusBarButton,
+        in screen: NSScreen,
+        buttonWindow: NSWindow
+    ) -> NSPoint {
         // Convert button frame to screen coordinates
         let buttonFrame = buttonWindow.convertToScreen(
             button.convert(button.bounds, to: nil)
@@ -95,24 +120,15 @@ final class PopoverManager {
 
         // Position below menu bar, centered on button
         let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
-        let spacingBelowMenuBar: CGFloat = 0
-        let totalOffset = menuBarHeight + spacingBelowMenuBar
-
-        let popoverY = screen.frame.maxY - totalOffset - popoverSize.height
+        let popoverY = screen.frame.maxY - menuBarHeight - popoverSize.height
         let popoverX = buttonFrame.midX - popoverSize.width / 2
 
         // Keep popover on screen
         let clampedX = max(
-            screen.visibleFrame.minX, min(popoverX, screen.visibleFrame.maxX - popoverSize.width))
+            screen.visibleFrame.minX,
+            min(popoverX, screen.visibleFrame.maxX - popoverSize.width)
+        )
 
-        window.setFrameOrigin(NSPoint(x: clampedX, y: popoverY))
-        window.alphaValue = 0
-        window.makeKeyAndOrderFront(nil)
-
-        // Fade in
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
-            window.animator().alphaValue = 1
-        }
+        return NSPoint(x: clampedX, y: popoverY)
     }
 }

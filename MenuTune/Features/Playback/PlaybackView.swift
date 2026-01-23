@@ -11,60 +11,55 @@ import SwiftUI
 
 /// Main playback view with album artwork and controls overlay.
 struct PlaybackView: View {
-    
+
     // MARK: - Properties
-    
+
     @ObservedObject var model: PlaybackModel
     @ObservedObject var preferences: PreferencesModel
     @State private var isHovering = false
-    
+
     /// Callback to open preferences window.
     var onOpenPreferences: (() -> Void)?
-    
+
     // MARK: - Body
-    
+
     var body: some View {
-        ZStack {
-            // Background material
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .frame(width: 300, height: 300)
-            
-            content
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .frame(width: 300, height: 300)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
+        content
+            .frame(width: 300, height: 300)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .onHover { hovering in
+                withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+                    isHovering = hovering
+                }
             }
-        }
     }
-    
+
     // MARK: - Content
-    
+
     @ViewBuilder
     private var content: some View {
-        let blurRadius: CGFloat = isHovering ? 5 : 0
-        let overlayColor: Color? = isHovering ? Color.black.opacity(0.3) : nil
-        
         ZStack {
             // Artwork layer
             artworkView
-                .blur(radius: blurRadius)
-                .overlay(overlayColor)
-            
+                .blur(radius: isHovering ? 5 : 0)
+                .overlay {
+                    if isHovering {
+                        Color.black.opacity(0.3)
+                            .transition(.opacity)
+                    }
+                }
+
             // Controls overlay (appears on hover)
             if isHovering {
                 controlsOverlay
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
+        .animation(.spring(duration: 0.3, bounce: 0.1), value: isHovering)
     }
-    
+
     // MARK: - Artwork View
-    
+
     @ViewBuilder
     private var artworkView: some View {
         if let url = model.imageURL {
@@ -97,65 +92,101 @@ struct PlaybackView: View {
             fallbackArtwork
         }
     }
-    
+
     private var fallbackArtwork: some View {
         ZStack {
-            Color.gray.opacity(0.2)
-            Image(systemName: "music.note")
-                .resizable()
-                .scaledToFit()
-                .foregroundColor(.white.opacity(0.2))
-                .frame(width: 100, height: 100)
+            // Gradient background with corner radius
+            LinearGradient(
+                colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.2)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            // Same layout as controlsOverlay
+            VStack(spacing: 0) {
+                Spacer()
+
+                // Center content (like centerControls without playback buttons)
+                VStack(spacing: 12) {
+                    // Artist name
+                    Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+
+                    // Music note icon (instead of playback controls)
+                    Image(systemName: "music.note")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.vertical, 10)
+                        .symbolRenderingMode(.hierarchical)
+
+                    // Track title
+                    Text(model.title.isEmpty ? "No Track" : model.title)
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+
+                Spacer()
+            }
+            .padding(16)
         }
         .frame(width: 300, height: 300)
     }
-    
+
     // MARK: - Controls Overlay
-    
+
     private var controlsOverlay: some View {
         VStack(spacing: 0) {
             // Top bar: App icon and settings gear
             topBar
-            
+
             Spacer()
-            
+
             // Center: Track info and playback controls
             centerControls
-            
+
             Spacer()
-            
+
             // Bottom bar: Time and progress slider
             bottomBar
         }
         .padding(16)
     }
-    
+
     // MARK: - Top Bar
-    
+
     private var topBar: some View {
         HStack {
             // App icon button (opens music app)
             Button(action: { model.openMusicApp() }) {
                 playerIconView
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(width: 20, height: 20)
             }
             .buttonStyle(.plain)
-            
+
             Spacer()
-            
+
             // Settings gear button
             Button(action: { onOpenPreferences?() }) {
                 Image(systemName: "gearshape.fill")
                     .resizable()
                     .scaledToFit()
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(width: 20, height: 20)
+                    .symbolRenderingMode(.hierarchical)
             }
             .buttonStyle(.plain)
         }
     }
-    
+
     /// Player icon view that handles both asset and SF Symbol icons.
     @ViewBuilder
     private var playerIconView: some View {
@@ -165,6 +196,7 @@ struct PlaybackView: View {
             Image(systemName: String(iconName.dropFirst(3)))
                 .resizable()
                 .scaledToFit()
+                .symbolRenderingMode(.hierarchical)
         } else {
             // Asset icon (for Spotify/Apple Music)
             Image(iconName)
@@ -173,33 +205,30 @@ struct PlaybackView: View {
                 .scaledToFit()
         }
     }
-    
+
     // MARK: - Center Controls
-    
+
     private var centerControls: some View {
         VStack(spacing: 12) {
-            // Artist name
+            // Artist name with content transition
             Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
                 .font(.title3)
                 .fontWeight(.medium)
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-            
+                .contentTransition(.interpolate)
+                .animation(.spring(duration: 0.3), value: model.artist)
+
             // Playback buttons (only for controllable sources)
             if model.supportsControl {
                 HStack(spacing: 10) {
                     playbackButton(imageName: "backward.fill", size: 30) {
                         model.skipBack()
                     }
-                    
-                    playbackButton(
-                        imageName: model.isPlaying ? "pause.fill" : "play.fill",
-                        size: 40
-                    ) {
-                        model.togglePlayPause()
-                    }
-                    
+
+                    playPauseButton
+
                     playbackButton(imageName: "forward.fill", size: 30) {
                         model.skipForward()
                     }
@@ -210,21 +239,41 @@ struct PlaybackView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 40, height: 40)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.7))
                     .padding(.vertical, 10)
+                    .symbolEffect(.variableColor.iterative, isActive: model.isPlaying)
+                    .symbolRenderingMode(.hierarchical)
             }
-            
-            // Track title
+
+            // Track title with content transition
             Text(model.title.isEmpty ? "No Track" : model.title)
                 .font(.title3)
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
+                .contentTransition(.interpolate)
+                .animation(.spring(duration: 0.3), value: model.title)
         }
     }
-    
+
+    // MARK: - Play/Pause Button with Symbol Effect
+
+    private var playPauseButton: some View {
+        Button(action: { model.togglePlayPause() }) {
+            Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 40, height: 40)
+                .padding(20)
+                .contentShape(Rectangle())
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+    }
+
     // MARK: - Bottom Bar
-    
+
     @ViewBuilder
     private var bottomBar: some View {
         if model.supportsControl {
@@ -232,9 +281,11 @@ struct PlaybackView: View {
                 // Current time
                 Text(formatTime(model.currentTime, styleMatching: model.totalTime))
                     .font(.body.monospacedDigit())
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .fixedSize(horizontal: true, vertical: false)
-                
+                    .contentTransition(.numericText())
+                    .animation(.spring(duration: 0.2), value: model.currentTime)
+
                 // Progress slider
                 CustomSlider(
                     value: Binding(
@@ -246,11 +297,11 @@ struct PlaybackView: View {
                     trackColor: .white
                 )
                 .frame(maxWidth: .infinity)
-                
+
                 // Total time
                 Text(formatTime(model.totalTime, styleMatching: model.totalTime))
                     .font(.body.monospacedDigit())
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .fixedSize(horizontal: true, vertical: false)
             }
         } else {
@@ -259,12 +310,12 @@ struct PlaybackView: View {
                 Spacer()
                 Text(sourceLabel)
                     .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundStyle(.white.opacity(0.6))
                 Spacer()
             }
         }
     }
-    
+
     /// Label describing the playback source for non-controllable sources.
     private var sourceLabel: String {
         switch model.playerType {
@@ -276,10 +327,12 @@ struct PlaybackView: View {
             return ""
         }
     }
-    
+
     // MARK: - Helper Views
-    
-    private func playbackButton(imageName: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+
+    private func playbackButton(imageName: String, size: CGFloat, action: @escaping () -> Void)
+        -> some View
+    {
         Button(action: action) {
             Image(systemName: imageName)
                 .resizable()
@@ -289,17 +342,18 @@ struct PlaybackView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundColor(.white)
+        .foregroundStyle(.white)
+        .symbolEffect(.bounce, value: imageName)
     }
-    
+
     // MARK: - Time Formatting
-    
+
     private func formatTime(_ seconds: Double, styleMatching total: Double) -> String {
         let s = Int(max(0, seconds))
         let t = Int(max(0, total))
         let (h, m, sec) = (s / 3600, (s % 3600) / 60, s % 60)
         let (th, tm) = (t / 3600, (t % 3600) / 60)
-        
+
         if th > 0 {
             return String(format: "%d:%02d:%02d", h, m, sec)
         } else if tm >= 10 {

@@ -14,10 +14,13 @@ import SwiftUI
 /// Floats above other windows and dismisses on outside click.
 final class PopoverWindow: NSPanel {
 
+    // MARK: - Properties
+
     private let visualEffectView: NSVisualEffectView
 
+    // MARK: - Initialization
+
     init<Content: View>(rootView: Content) {
-        let hostingView = NSHostingView(rootView: rootView)
         let contentRect = NSRect(x: 0, y: 0, width: 300, height: 300)
 
         // Setup Visual Effect View
@@ -36,50 +39,64 @@ final class PopoverWindow: NSPanel {
             defer: true
         )
 
-        // Window configuration
-        self.isReleasedWhenClosed = false
-        self.level = .floating
-        self.collectionBehavior = [.transient, .canJoinAllSpaces]
-        self.isOpaque = false
-        self.backgroundColor = .clear
-        self.hasShadow = true
-        self.ignoresMouseEvents = false
-        self.becomesKeyOnlyIfNeeded = true
+        configureWindow()
+        setupContentView(rootView: rootView)
+    }
 
-        // View Hierarchy
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
-        hostingView.frame = visualEffectView.bounds
+    // MARK: - Configuration
+
+    private func configureWindow() {
+        isReleasedWhenClosed = false
+        level = .floating
+        collectionBehavior = [.transient, .canJoinAllSpaces]
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = true
+        ignoresMouseEvents = false
+        becomesKeyOnlyIfNeeded = true
+    }
+
+    private func setupContentView<Content: View>(rootView: Content) {
+        // Create container view for proper corner masking
+        let containerView = NSView(frame: visualEffectView.bounds)
+        containerView.wantsLayer = true
+        containerView.layer?.cornerRadius = 12
+        containerView.layer?.masksToBounds = true
+
+        // Add visual effect view as background
+        visualEffectView.autoresizingMask = [.width, .height]
+        containerView.addSubview(visualEffectView)
+
+        // Create hosting view with transparent background
+        let hostingView = NSHostingView(rootView: rootView)
+        hostingView.frame = containerView.bounds
         hostingView.autoresizingMask = [.width, .height]
 
-        visualEffectView.addSubview(hostingView)
-        self.contentView = visualEffectView
+        // Ensure hosting view is fully transparent
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        hostingView.layer?.isOpaque = false
+
+        containerView.addSubview(hostingView)
+        contentView = containerView
     }
+
+    // MARK: - Appearance
 
     /// Updates the window appearance based on preferences.
     func updateAppearance(blurIntensity: Double, tintColorHex: String, theme: AppearanceTheme) {
-        // Apply theme (Appearance)
         switch theme {
         case .system:
-            self.appearance = nil
+            appearance = nil
         case .light:
-            self.appearance = NSAppearance(named: .aqua)
+            appearance = NSAppearance(named: .aqua)
         case .dark:
-            self.appearance = NSAppearance(named: .darkAqua)
+            appearance = NSAppearance(named: .darkAqua)
         }
-
-        // Apply Tint (via layer background color)
-        // blurIntensity is handled by material choice typically, but we can adjust alpha of a tint layer if we had one.
-        // For now, let's just stick to material.
-
-        // If tintColor is provided, we might need an overlay view.
-        // For simplicity, we'll verify this works first.
     }
 
-    override var canBecomeKey: Bool {
-        return true
-    }
+    // MARK: - Window Behavior
 
-    override var canBecomeMain: Bool {
-        return false
-    }
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }

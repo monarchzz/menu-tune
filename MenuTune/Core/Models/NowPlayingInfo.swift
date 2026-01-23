@@ -11,26 +11,32 @@ import Foundation
 /// This is a value type that can be safely passed across concurrency boundaries.
 @preconcurrency
 struct NowPlayingInfo: Equatable, Sendable {
-    
+
     // MARK: - Properties
-    
+
     /// The title of the current track.
     let title: String
-    
+
     /// The artist of the current track.
     let artist: String
-    
+
     /// The album name (optional).
     let album: String?
-    
+
     /// Whether media is currently playing.
     let isPlaying: Bool
-    
+
     /// The bundle identifier of the source app (e.g., "com.spotify.client").
     let sourceAppBundleID: String?
-    
+
+    /// Total duration of the track in seconds.
+    let totalTime: Double
+
+    /// Current playback position in seconds.
+    let currentTime: Double
+
     // MARK: - Computed Properties
-    
+
     /// Formatted display string: "Title - Artist" or just "Title" if no artist.
     var formattedTitle: String {
         if artist.isEmpty {
@@ -38,30 +44,34 @@ struct NowPlayingInfo: Equatable, Sendable {
         }
         return "\(title) - \(artist)"
     }
-    
+
     /// Returns true if this info has meaningful content to display.
     var hasContent: Bool {
         !title.isEmpty
     }
-    
+
     // MARK: - Initialization
-    
+
     nonisolated init(
         title: String,
         artist: String = "",
         album: String? = nil,
         isPlaying: Bool = false,
-        sourceAppBundleID: String? = nil
+        sourceAppBundleID: String? = nil,
+        totalTime: Double = 0,
+        currentTime: Double = 0
     ) {
         self.title = title
         self.artist = artist
         self.album = album
         self.isPlaying = isPlaying
         self.sourceAppBundleID = sourceAppBundleID
+        self.totalTime = totalTime
+        self.currentTime = currentTime
     }
-    
+
     // MARK: - Factory Methods
-    
+
     /// Creates an empty placeholder info.
     nonisolated static var empty: NowPlayingInfo {
         NowPlayingInfo(title: "", artist: "", isPlaying: false)

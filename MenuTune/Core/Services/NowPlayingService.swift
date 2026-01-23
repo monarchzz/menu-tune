@@ -19,6 +19,8 @@ struct NowPlayingState {
     let isPlaying: Bool
     let sourceAppBundleID: String?
     let artworkID: String?
+    let totalTime: Double
+    let currentTime: Double
 
     var playerIconName: String {
         PlayerType.from(bundleID: sourceAppBundleID).iconName
@@ -97,17 +99,21 @@ final class NowPlayingService {
                     album: current.album,
                     isPlaying: !current.isPlaying,
                     sourceAppBundleID: current.sourceAppBundleID,
-                    artworkID: current.artworkID
+                    artworkID: current.artworkID,
+                    totalTime: current.totalTime,
+                    currentTime: current.currentTime
                 )
             case .next:
                 // Clear title/artist briefly to indicate change
                 optimistic = NowPlayingState(
                     title: "…", artist: "", album: nil, isPlaying: current.isPlaying,
-                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil)
+                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil,
+                    totalTime: 0, currentTime: 0)
             case .previous:
                 optimistic = NowPlayingState(
                     title: "…", artist: "", album: nil, isPlaying: current.isPlaying,
-                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil)
+                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil,
+                    totalTime: 0, currentTime: 0)
             case .seek(_):
                 // We don't change metadata for seek; no optimistic change for now
                 optimistic = current
@@ -179,7 +185,9 @@ final class NowPlayingService {
             album: info.album,
             isPlaying: info.isPlaying,
             sourceAppBundleID: info.sourceAppBundleID,
-            artworkID: artworkID
+            artworkID: artworkID,
+            totalTime: info.totalTime,
+            currentTime: info.currentTime
         )
 
         await MainActor.run { subject.send(state) }

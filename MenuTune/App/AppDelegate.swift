@@ -3,7 +3,6 @@
 //  MenuTune
 //
 //  Application delegate for menu bar app lifecycle.
-//  Wires together the new SpotMenu-style popover UI.
 //
 
 import AppKit
@@ -52,6 +51,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start NowPlayingService
         NowPlayingService.shared.start()
+
+        // Safety timer to ensure layout is correct on all screens
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshStatusItem()
+            }
+        }
 
         Log.info("MenuTune initialized successfully", category: .app)
     }
@@ -104,6 +110,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             .store(in: &cancellables)
+
+        // Observe status item model changes
+        // Triggers updates on every model change notification.
+        statusModel.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                // Delay slightly to wait for published property updates
+                DispatchQueue.main.async {
+                    self?.refreshStatusItem()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func setupGlobalEventMonitor() {
@@ -115,7 +133,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func syncAppBehavior() {
-        // Sync Launch at Login
         if LaunchAtLogin.isEnabled != preferences.launchAtLogin {
             LaunchAtLogin.isEnabled = preferences.launchAtLogin
         }
