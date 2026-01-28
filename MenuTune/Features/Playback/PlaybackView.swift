@@ -119,6 +119,7 @@ struct PlaybackView: View {
 
             // Always visible content for non-controllable or idle state
             VStack(spacing: 16) {
+                topBar
                 Spacer()
                 // Music note indicator
                 Image(systemName: "music.note")
