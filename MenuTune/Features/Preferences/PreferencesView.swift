@@ -75,26 +75,46 @@ struct PreferencesView: View {
                 Toggle("Show music note when playing", isOn: $preferences.showMusicIcon)
             }
 
-            Section("Behavior") {
+            Section("When Paused") {
                 Toggle("Hide artist when paused", isOn: $preferences.hideArtistWhenPaused)
                 Toggle("Hide title when paused", isOn: $preferences.hideTitleWhenPaused)
             }
 
             Section("Layout") {
-                Picker("Font Weight", selection: $preferences.menuBarFontWeight) {
-                    ForEach(MenuBarFontWeight.allCases) { weight in
-                        Text(weight.rawValue.capitalized).tag(weight)
+                Toggle("Compact View", isOn: $preferences.compactView)
+
+                if preferences.compactView {
+                    Picker("Font Weight (Top)", selection: $preferences.fontWeightCompactTop) {
+                        ForEach(MenuBarFontWeight.allCases) { weight in
+                            Text(weight.rawValue.capitalized).tag(weight)
+                        }
+                    }
+
+                    Picker("Font Weight (Bottom)", selection: $preferences.fontWeightCompactBottom)
+                    {
+                        ForEach(MenuBarFontWeight.allCases) { weight in
+                            Text(weight.rawValue.capitalized).tag(weight)
+                        }
+                    }
+                } else {
+                    Picker("Font Weight", selection: $preferences.fontWeightNormal) {
+                        ForEach(MenuBarFontWeight.allCases) { weight in
+                            Text(weight.rawValue.capitalized).tag(weight)
+                        }
+                    }
+
+                    Picker("Separator", selection: $preferences.customSeparator) {
+                        Text(" - ").tag(" - ")
+                        Text(" · ").tag(" · ")
+                        Text(" | ").tag(" | ")
+                        Text(" / ").tag(" / ")
+                        Text("  ").tag("  ")
                     }
                 }
 
-                TextField("Separator", text: $preferences.customSeparator)
-                    .frame(width: 100)
-
-                Toggle("Compact View", isOn: $preferences.compactView)
-
                 VStack(alignment: .leading) {
                     Text("Max Width: \(Int(preferences.maxStatusItemWidth))px")
-                    Slider(value: $preferences.maxStatusItemWidth, in: 100...600, step: 10)
+                    Slider(value: $preferences.maxStatusItemWidth, in: 50...500, step: 50)
                 }
             }
         }
@@ -104,12 +124,6 @@ struct PreferencesView: View {
     private var appearanceTab: some View {
         Form {
             Section("Player Window") {
-                Picker("Theme", selection: $preferences.appearanceTheme) {
-                    Text("System").tag(AppearanceTheme.system)
-                    Text("Light").tag(AppearanceTheme.light)
-                    Text("Dark").tag(AppearanceTheme.dark)
-                }
-
                 VStack(alignment: .leading) {
                     Text("Blur Intensity")
                     Slider(value: $preferences.blurIntensity, in: 0...1)
@@ -121,6 +135,11 @@ struct PreferencesView: View {
                         get: { Color(hex: preferences.hoverTintColorHex) ?? .clear },
                         set: { preferences.hoverTintColorHex = $0.toHex() ?? "" }
                     ))
+
+                VStack(alignment: .leading) {
+                    Text("Tint Opacity")
+                    Slider(value: $preferences.hoverTintOpacity, in: 0...1)
+                }
             }
         }
         .formStyle(.grouped)
@@ -134,9 +153,6 @@ struct PreferencesView: View {
 
             Section("Dock") {
                 Toggle("Hide Dock Icon", isOn: $preferences.hideDockIcon)
-                Text("Changes require app restart")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

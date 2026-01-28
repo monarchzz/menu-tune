@@ -34,6 +34,21 @@ struct PlaybackView: View {
             }
     }
 
+    // MARK: - Computed Properties
+
+    /// Tint color for hover overlay.
+    private var hoverTintColor: Color {
+        if let color = Color(hex: preferences.hoverTintColorHex) {
+            return color
+        }
+        return Color.black
+    }
+
+    /// Blur radius based on preference.
+    private var blurRadius: CGFloat {
+        CGFloat(preferences.blurIntensity * 10)  // Scale 0-1 to 0-10
+    }
+
     // MARK: - Content
 
     @ViewBuilder
@@ -41,16 +56,16 @@ struct PlaybackView: View {
         ZStack {
             // Artwork layer
             artworkView
-                .blur(radius: isHovering ? 5 : 0)
+                .blur(radius: (isHovering && model.supportsControl) ? blurRadius : 0)
                 .overlay {
-                    if isHovering {
-                        Color.black.opacity(0.3)
+                    if isHovering && model.supportsControl {
+                        hoverTintColor.opacity(preferences.hoverTintOpacity)
                             .transition(.opacity)
                     }
                 }
 
-            // Controls overlay (appears on hover)
-            if isHovering {
+            // Controls overlay (appears on hover, only for controllable sources)
+            if isHovering && model.supportsControl {
                 controlsOverlay
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
@@ -95,45 +110,34 @@ struct PlaybackView: View {
 
     private var fallbackArtwork: some View {
         ZStack {
-            // Gradient background with corner radius
+            // Gradient background
             LinearGradient(
                 colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.2)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
-            // Same layout as controlsOverlay
-            VStack(spacing: 0) {
+            // Always visible content for non-controllable or idle state
+            VStack(spacing: 16) {
                 Spacer()
-
-                // Center content (like centerControls without playback buttons)
-                VStack(spacing: 12) {
-                    // Artist name
-                    Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-
-                    // Music note icon (instead of playback controls)
-                    Image(systemName: "music.note")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 40, height: 40)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(.vertical, 10)
-                        .symbolRenderingMode(.hierarchical)
-
-                    // Track title
-                    Text(model.title.isEmpty ? "No Track" : model.title)
-                        .font(.title3)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
+                // Music note indicator
+                Image(systemName: "music.note")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 48, height: 48)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .symbolRenderingMode(.hierarchical)
+                Spacer()
+                // Track info and source label at the bottom
+                VStack(spacing: 16) {
+                    trackInfo
+                    if !model.supportsControl {
+                        Text(sourceLabel)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
                 }
 
-                Spacer()
             }
             .padding(16)
         }
@@ -149,13 +153,16 @@ struct PlaybackView: View {
 
             Spacer()
 
-            // Center: Track info and playback controls
+            // Center: Playback controls / indicator
             centerControls
 
             Spacer()
 
-            // Bottom bar: Time and progress slider
-            bottomBar
+            // Bottom section: Track info and progress
+            VStack(spacing: 16) {
+                trackInfo
+                bottomBar
+            }
         }
         .padding(16)
     }
@@ -209,26 +216,14 @@ struct PlaybackView: View {
     // MARK: - Center Controls
 
     private var centerControls: some View {
-        VStack(spacing: 12) {
-            // Artist name with content transition
-            Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
-                .font(.title3)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .contentTransition(.interpolate)
-                .animation(.spring(duration: 0.3), value: model.artist)
-
+        Group {
             // Playback buttons (only for controllable sources)
             if model.supportsControl {
                 HStack(spacing: 10) {
                     playbackButton(imageName: "backward.fill", size: 30) {
                         model.skipBack()
                     }
-
                     playPauseButton
-
                     playbackButton(imageName: "forward.fill", size: 30) {
                         model.skipForward()
                     }
@@ -238,21 +233,38 @@ struct PlaybackView: View {
                 Image(systemName: model.isPlaying ? "waveform" : "music.note")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .frame(width: 44, height: 44)
+                    .foregroundStyle(.white.opacity(0.9))
                     .padding(.vertical, 10)
                     .symbolEffect(.variableColor.iterative, isActive: model.isPlaying)
                     .symbolRenderingMode(.hierarchical)
             }
+        }
+    }
 
+    // MARK: - Track Info
+
+    private var trackInfo: some View {
+        VStack(spacing: 8) {
             // Track title with content transition
             Text(model.title.isEmpty ? "No Track" : model.title)
                 .font(.title3)
+                .fontWeight(.bold)
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .contentTransition(.interpolate)
                 .animation(.spring(duration: 0.3), value: model.title)
+
+            // Artist name with content transition
+            Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundStyle(.white.opacity(0.8))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .contentTransition(.interpolate)
+                .animation(.spring(duration: 0.3), value: model.artist)
         }
     }
 

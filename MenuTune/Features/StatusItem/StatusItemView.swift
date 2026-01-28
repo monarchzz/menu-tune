@@ -63,13 +63,35 @@ struct StatusItemView: View {
             }
 
             // Artist - Title text
-            if displayOptions.showText && !displayText.isEmpty {
-                Text(displayText)
-                    .font(.menuBarText(weight: preferences.menuBarFontWeight.weight))
-                    .lineLimit(1)
-                    .padding(.horizontal, preferences.compactView ? 0 : 4)
-                    .contentTransition(.interpolate)
-                    .animation(.spring(duration: 0.3), value: displayText)
+            if displayOptions.showText {
+                if preferences.compactView {
+                    VStack(alignment: .leading, spacing: -2) {
+                        if displayOptions.showArtist {
+                            Text(statusModel.artist)
+                                .lineLimit(1)
+                                .font(
+                                    .system(
+                                        size: 10, weight: preferences.fontWeightCompactTop.weight))
+                        }
+                        if displayOptions.showTitle {
+                            Text(statusModel.title)
+                                .lineLimit(1)
+                                .font(
+                                    .system(
+                                        size: 9, weight: preferences.fontWeightCompactBottom.weight)
+                                )
+                        }
+                    }
+                    .frame(maxWidth: preferences.maxStatusItemWidth)
+                    .padding(.horizontal, 0)
+                } else if !displayText.isEmpty {
+                    Text(displayText)
+                        .font(.menuBarText(weight: preferences.fontWeightNormal.weight))
+                        .lineLimit(1)
+                        .padding(.horizontal, 4)
+                        .contentTransition(.interpolate)
+                        .animation(.spring(duration: 0.3), value: displayText)
+                }
             }
         }
         .frame(height: 22)

@@ -11,21 +11,17 @@ import SwiftUI
 // MARK: - Enums
 
 enum MenuBarFontWeight: String, CaseIterable, Identifiable {
-    case ultraLight, thin, light, regular, medium, semibold, bold, heavy, black
+    case light, regular, medium, semibold, bold
 
     var id: String { rawValue }
 
     var weight: Font.Weight {
         switch self {
-        case .ultraLight: return .ultraLight
-        case .thin: return .thin
         case .light: return .light
         case .regular: return .regular
         case .medium: return .medium
         case .semibold: return .semibold
         case .bold: return .bold
-        case .heavy: return .heavy
-        case .black: return .black
         }
     }
 }
@@ -64,14 +60,17 @@ final class PreferencesModel: ObservableObject {
     /// Use a compact view (smaller padding/layout).
     @AppStorage("compactView") var compactView: Bool = false
 
-    /// Font weight for the menu bar text.
-    @AppStorage("menuBarFontWeight") var menuBarFontWeight: MenuBarFontWeight = .medium
+    /// Font weight for the menu bar text (Normal Mode).
+    @AppStorage("fontWeightNormal") var fontWeightNormal: MenuBarFontWeight = .medium
+
+    /// Font weight for the top line (Artist) in compact view.
+    @AppStorage("fontWeightCompactTop") var fontWeightCompactTop: MenuBarFontWeight = .medium
+
+    /// Font weight for the bottom line (Title) in compact view.
+    @AppStorage("fontWeightCompactBottom") var fontWeightCompactBottom: MenuBarFontWeight = .medium
 
     /// Maximum width for the status item text.
     @AppStorage("maxStatusItemWidth") var maxStatusItemWidth: Double = 300
-
-    /// Enable scrolling text for long labels.
-    @AppStorage("scrollingText") var scrollingText: Bool = false
 
     /// Custom separator between Artist and Title.
     @AppStorage("customSeparator") var customSeparator: String = " - "
@@ -83,6 +82,9 @@ final class PreferencesModel: ObservableObject {
 
     /// Hover tint color as Hex string.
     @AppStorage("hoverTintColorHex") var hoverTintColorHex: String = ""
+
+    /// Opacity for the tint color (0.0 - 1.0).
+    @AppStorage("hoverTintOpacity") var hoverTintOpacity: Double = 0.3
 
     /// Theme for the player window foreground (System, Light, Dark).
     @AppStorage("appearanceTheme") var appearanceTheme: AppearanceTheme = .system
