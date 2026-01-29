@@ -5,20 +5,20 @@
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleName</key>
-    <string>MenuTune</string>
+    <string>Menu Tune</string>
     <key>CFBundleDisplayName</key>
-    <string>MenuTune</string>
+    <string>Menu Tune</string>
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>0.0.1</string>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2025. All rights reserved.</string>
+    <string>Copyright © 2026 Menu Tune. All rights reserved.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>MenuTune needs to communicate with music apps like Spotify and Apple Music to display now playing information and control playback.</string>
+    <string>Menu Tune requires permission to show Now Playing music information from your media players in your menu bar.</string>
 </dict>
 </plist>

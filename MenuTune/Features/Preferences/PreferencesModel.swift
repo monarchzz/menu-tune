@@ -95,5 +95,8 @@ final class PreferencesModel: ObservableObject {
     @AppStorage("launchAtLogin") var launchAtLogin: Bool = false
 
     /// Hide the app icon from the Dock.
-    @AppStorage("hideDockIcon") var hideDockIcon: Bool = false
+    @AppStorage("hideDockIcon") var hideDockIcon: Bool = true
+
+    /// Polling interval in seconds for refreshing now-playing info.
+    @AppStorage("pollIntervalSeconds") var pollIntervalSeconds: Double = 2.0
 }

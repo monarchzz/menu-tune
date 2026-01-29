@@ -30,7 +30,7 @@ final class PreferencesWindowController: NSWindowController {
         )
 
         // Configure window properties
-        window.title = "MenuTune Preferences"
+        window.title = "Menu Tune Preferences"
         window.titlebarAppearsTransparent = false
         window.isReleasedWhenClosed = false
         window.toolbarStyle = .unified

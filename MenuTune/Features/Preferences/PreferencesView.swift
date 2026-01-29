@@ -154,37 +154,51 @@ struct PreferencesView: View {
             Section("Dock") {
                 Toggle("Hide Dock Icon", isOn: $preferences.hideDockIcon)
             }
+
+            Section("Refresh") {
+                VStack(alignment: .leading) {
+                    Text("Polling Interval: \(Int(preferences.pollIntervalSeconds))s")
+                    Slider(value: $preferences.pollIntervalSeconds, in: 1...10, step: 1)
+                }
+            }
         }
         .formStyle(.grouped)
     }
 
     private var aboutTab: some View {
-        VStack(spacing: 16) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 64, height: 64)
+        VStack(spacing: 0) {
+            Spacer()
 
-            VStack(spacing: 4) {
-                Text("MenuTune")
-                    .font(.title2)
-                    .bold()
+            VStack(spacing: 24) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 80, height: 80)
+                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
 
-                Text(appVersion)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Text("Menu Tune")
+                        .font(.system(size: 28, weight: .bold))
+
+                    Text(appVersion)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("Show Now Playing music in your menu bar.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
-
-            Text("A minimal menu bar music player.")
-                .font(.body)
-                .multilineTextAlignment(.center)
 
             Spacer()
 
-            Text("© 2025 MenuTune")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text("© 2026 Menu Tune")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .padding(.bottom, 20)
         }
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Computed Properties

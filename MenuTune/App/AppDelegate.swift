@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Log.info("MenuTune starting up...", category: .app)
+        Log.info("Menu Tune starting up...", category: .app)
 
         // Initialize status item
         setupStatusItem()
@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start NowPlayingService
         NowPlayingService.shared.start()
+        syncPollInterval()
 
         // Safety timer to ensure layout is correct on all screens
         Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
@@ -59,11 +60,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        Log.info("MenuTune initialized successfully", category: .app)
+        Log.info("Menu Tune initialized successfully", category: .app)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        Log.info("MenuTune shutting down...", category: .app)
+        Log.info("Menu Tune shutting down...", category: .app)
 
         NowPlayingService.shared.stop()
 
@@ -107,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     self?.refreshStatusItem()
                     self?.syncAppBehavior()
+                    self?.syncPollInterval()
                 }
             }
             .store(in: &cancellables)
@@ -151,6 +153,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func syncPollInterval() {
+        NowPlayingService.shared.setPollInterval(preferences.pollIntervalSeconds)
+    }
+
     // MARK: - Status Bar Actions
 
     @objc private func statusItemClicked(_ sender: Any?) {
@@ -174,10 +180,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSMenuItem(title: "Refresh", action: #selector(refreshAction), keyEquivalent: "r"))
         menu.addItem(
             NSMenuItem(
-                title: "Preferences...", action: #selector(preferencesAction), keyEquivalent: ","))
+                title: "Preferences", action: #selector(preferencesAction), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(
-            NSMenuItem(title: "Quit MenuTune", action: #selector(quitAction), keyEquivalent: "q"))
+            NSMenuItem(title: "Quit Menu Tune", action: #selector(quitAction), keyEquivalent: "q"))
 
         // Show menu
         statusItem.menu = menu

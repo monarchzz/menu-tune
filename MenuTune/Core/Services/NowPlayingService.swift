@@ -55,6 +55,13 @@ final class NowPlayingService {
 
     var isRunning: Bool { pollTask != nil }
 
+    // MARK: - Configuration
+
+    /// Updates the polling interval. Takes effect on the next poll cycle.
+    func setPollInterval(_ seconds: TimeInterval) {
+        pollIntervalSeconds = max(1, seconds)
+    }
+
     // MARK: - Start / Stop
 
     func start() {
