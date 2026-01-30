@@ -1,0 +1,86 @@
+name: Build and Release Menu Tune
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number (e.g., 0.0.1)"
+        required: true
+        default: "0.0.1"
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+
+      - name: Extract Version Info
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG_NAME="v$VERSION"
+          else
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            VERSION=${TAG_NAME#v}
+          fi
+
+          BUILD=$(git rev-list --count HEAD)
+
+          echo "marketing_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build Menu Tune App
+        run: |
+          xcodebuild -project MenuTune.xcodeproj \
+            -scheme MenuTune \
+            -configuration Release \
+            -derivedDataPath ./build \
+            -arch arm64 -arch x86_64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION=${{ steps.vars.outputs.marketing_version }} \
+            CURRENT_PROJECT_VERSION=${{ steps.vars.outputs.build_number }} \
+            build
+
+      - name: Install create-dmg and Build DMG
+        run: |
+          brew install create-dmg
+          mkdir -p dist
+          cp -R "build/Build/Products/Release/Menu Tune.app" dist/
+          create-dmg \
+            --volname "Menu Tune ${{ steps.vars.outputs.tag_name }}" \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Menu Tune.app" 175 120 \
+            --app-drop-link 425 120 \
+            "MenuTune-${{ steps.vars.outputs.tag_name }}.dmg" \
+            "dist/"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MenuTune-${{ steps.vars.outputs.tag_name }}.dmg
+          name: Release ${{ steps.vars.outputs.tag_name }}
+          body: |
+            ## Menu Tune ${{ steps.vars.outputs.tag_name }}
+
+            **Build:** ${{ steps.vars.outputs.build_number }}
+
+            ### Installation
+            1. Download the DMG file below
+            2. Open the DMG and drag "Menu Tune" to your Applications folder
+            3. Launch Menu Tune from Applications
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
