@@ -86,10 +86,5 @@ jobs:
             ## Menu Tune ${{ steps.vars.outputs.tag_name }}
 
             **Build:** ${{ steps.vars.outputs.build_number }}
-
-            ### Installation
-            1. Download the DMG file below
-            2. Open the DMG and drag "Menu Tune" to your Applications folder
-            3. Launch Menu Tune from Applications
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

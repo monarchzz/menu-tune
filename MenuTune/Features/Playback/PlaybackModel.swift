@@ -15,21 +15,22 @@ import SwiftUI
 /// Main model managing playback state, auto-detection, and polling.
 /// Uses NowPlayingProvider to detect ANY playing source (including browsers),
 /// but only provides playback controls for Spotify and Apple Music.
+@Observable
 @MainActor
-final class PlaybackModel: ObservableObject {
+final class PlaybackModel {
 
-    // MARK: - Published Properties
+    // MARK: - Observable Properties
 
-    @Published var imageURL: URL?
-    @Published var image: NSImage?
-    @Published var isPlaying: Bool = false
-    @Published var title: String = ""
-    @Published var artist: String = ""
-    @Published var album: String = ""
-    @Published var totalTime: Double = 1
-    @Published var currentTime: Double = 0
-    @Published var playerType: PlayerType = .none
-    @Published var sourceAppBundleID: String?
+    var imageURL: URL?
+    var image: NSImage?
+    var isPlaying: Bool = false
+    var title: String = ""
+    var artist: String = ""
+    var album: String = ""
+    var totalTime: Double = 1
+    var currentTime: Double = 0
+    var playerType: PlayerType = .none
+    var sourceAppBundleID: String?
 
     // MARK: - Properties
 

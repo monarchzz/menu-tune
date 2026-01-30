@@ -14,11 +14,10 @@ struct PlaybackView: View {
 
     // MARK: - Properties
 
-    @ObservedObject var model: PlaybackModel
+    var model: PlaybackModel
     @ObservedObject var preferences: PreferencesModel
     @State private var isHovering = false
 
-    /// Callback to open preferences window.
     var onOpenPreferences: (() -> Void)?
 
     // MARK: - Body
@@ -36,7 +35,6 @@ struct PlaybackView: View {
 
     // MARK: - Computed Properties
 
-    /// Tint color for hover overlay.
     private var hoverTintColor: Color {
         if let color = Color(hex: preferences.hoverTintColorHex) {
             return color
@@ -220,15 +218,12 @@ struct PlaybackView: View {
         Group {
             // Playback buttons (only for controllable sources)
             if model.supportsControl {
-                HStack(spacing: 10) {
-                    playbackButton(imageName: "backward.fill", size: 30) {
-                        model.skipBack()
-                    }
-                    playPauseButton
-                    playbackButton(imageName: "forward.fill", size: 30) {
-                        model.skipForward()
-                    }
-                }
+                PlaybackControlsView(
+                    isPlaying: model.isPlaying,
+                    onSkipBack: { model.skipBack() },
+                    onPlayPause: { model.togglePlayPause() },
+                    onSkipForward: { model.skipForward() }
+                )
             } else {
                 // Non-controllable source: show music note indicator
                 Image(systemName: model.isPlaying ? "waveform" : "music.note")
@@ -246,43 +241,7 @@ struct PlaybackView: View {
     // MARK: - Track Info
 
     private var trackInfo: some View {
-        VStack(spacing: 8) {
-            // Track title with content transition
-            Text(model.title.isEmpty ? "No Track" : model.title)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .contentTransition(.interpolate)
-                .animation(.spring(duration: 0.3), value: model.title)
-
-            // Artist name with content transition
-            Text(model.artist.isEmpty ? "Unknown Artist" : model.artist)
-                .font(.body)
-                .fontWeight(.medium)
-                .foregroundStyle(.white.opacity(0.8))
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .contentTransition(.interpolate)
-                .animation(.spring(duration: 0.3), value: model.artist)
-        }
-    }
-
-    // MARK: - Play/Pause Button with Symbol Effect
-
-    private var playPauseButton: some View {
-        Button(action: { model.togglePlayPause() }) {
-            Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
-                .padding(20)
-                .contentShape(Rectangle())
-                .contentTransition(.symbolEffect(.replace))
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        TrackInfoView(title: model.title, artist: model.artist)
     }
 
     // MARK: - Bottom Bar
@@ -339,24 +298,6 @@ struct PlaybackView: View {
         default:
             return ""
         }
-    }
-
-    // MARK: - Helper Views
-
-    private func playbackButton(imageName: String, size: CGFloat, action: @escaping () -> Void)
-        -> some View
-    {
-        Button(action: action) {
-            Image(systemName: imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-                .padding(20)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .symbolEffect(.bounce, value: imageName)
     }
 
     // MARK: - Time Formatting

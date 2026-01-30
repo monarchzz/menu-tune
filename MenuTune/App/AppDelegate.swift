@@ -100,7 +100,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupObservers() {
-        // Observe preference changes
         preferences.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
@@ -113,17 +112,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
 
-        // Observe status item model changes
-        // Triggers updates on every model change notification.
-        statusModel.objectWillChange
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                // Delay slightly to wait for published property updates
-                DispatchQueue.main.async {
-                    self?.refreshStatusItem()
-                }
+        observeStatusModel()
+    }
+
+    private func observeStatusModel() {
+        withObservationTracking {
+            _ = statusModel.artist
+            _ = statusModel.title
+            _ = statusModel.isPlaying
+            _ = statusModel.playerIconName
+        } onChange: { [weak self] in
+            DispatchQueue.main.async {
+                self?.refreshStatusItem()
+                self?.observeStatusModel()
             }
-            .store(in: &cancellables)
+        }
     }
 
     private func setupGlobalEventMonitor() {

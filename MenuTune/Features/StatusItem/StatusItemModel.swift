@@ -24,15 +24,16 @@ struct StatusItemDisplayOptions {
 // MARK: - Status Item Model
 
 /// Observable model for status bar item display state.
+@Observable
 @MainActor
-final class StatusItemModel: ObservableObject {
+final class StatusItemModel {
 
-    // MARK: - Published Properties
+    // MARK: - Observable Properties
 
-    @Published var artist: String = ""
-    @Published var title: String = ""
-    @Published var isPlaying: Bool = false
-    @Published var playerIconName: String = "SpotifyIcon"
+    var artist: String = ""
+    var title: String = ""
+    var isPlaying: Bool = false
+    var playerIconName: String = "SpotifyIcon"
 
     private var cancellables = Set<AnyCancellable>()
 

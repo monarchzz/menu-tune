@@ -12,7 +12,7 @@ import SwiftUI
 /// SwiftUI view displayed in the menu bar status item.
 struct StatusItemView: View {
 
-    @ObservedObject var statusModel: StatusItemModel
+    var statusModel: StatusItemModel
     @ObservedObject var preferences: PreferencesModel
 
     // MARK: - Constants

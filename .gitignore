@@ -79,3 +79,7 @@ Assets.xcassets/AppIcon.appiconset/*-Unassigned.png
 # Misc
 coverage.txt
 xcpretty-report.html
+
+# Agent
+.agents
+.agent
