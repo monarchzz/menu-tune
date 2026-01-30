@@ -11,6 +11,9 @@ on:
         required: true
         default: "0.0.1"
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: macos-15
@@ -21,7 +24,12 @@ jobs:
           fetch-depth: 0
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+        run: |
+          # Find the latest Xcode version available on the runner
+          XCODE_PATH=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          echo "Using Xcode at: $XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
 
       - name: Extract Version Info
         id: vars
@@ -71,6 +79,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.vars.outputs.tag_name }}
           files: MenuTune-${{ steps.vars.outputs.tag_name }}.dmg
           name: Release ${{ steps.vars.outputs.tag_name }}
           body: |
