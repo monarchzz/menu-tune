@@ -1,0 +1,34 @@
+import AppKit
+import Foundation
+
+// MARK: - Function Types
+typealias MRMediaRemoteGetNowPlayingInfoFunction =
+    @convention(c) (DispatchQueue, @escaping ([String: Any]) -> Void) -> Void
+
+// MARK: - Load Framework
+guard let handle = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW) else {
+    exit(1)
+}
+
+guard let infoSym = dlsym(handle, "MRMediaRemoteGetNowPlayingInfo") else {
+    exit(1)
+}
+let getInfo = unsafeBitCast(infoSym, to: MRMediaRemoteGetNowPlayingInfoFunction.self)
+
+// MARK: - Get Artwork
+let semaphore = DispatchSemaphore(value: 0)
+var artworkBase64 = ""
+
+getInfo(DispatchQueue.main) { info in
+    if let artworkData = info["kMRMediaRemoteNowPlayingInfoArtworkData"] as? Data {
+        artworkBase64 = artworkData.base64EncodedString()
+    }
+    semaphore.signal()
+}
+
+// Allow time for callback
+RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+_ = semaphore.wait(timeout: .now() + 0.5)
+
+// Output only base64 string (empty if none)
+print(artworkBase64)

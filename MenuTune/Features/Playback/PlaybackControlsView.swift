@@ -9,12 +9,13 @@ import SwiftUI
 
 // MARK: - Playback Controls View
 
-/// Displays playback control buttons (skip back, play/pause, skip forward).
+/// Displays playback control buttons or waveform indicator based on control support.
 struct PlaybackControlsView: View {
 
     // MARK: - Properties
 
     let isPlaying: Bool
+    let supportsControl: Bool
     let onSkipBack: () -> Void
     let onPlayPause: () -> Void
     let onSkipForward: () -> Void
@@ -22,10 +23,23 @@ struct PlaybackControlsView: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 10) {
-            playbackButton(imageName: "backward.fill", size: 30, action: onSkipBack)
-            playPauseButton
-            playbackButton(imageName: "forward.fill", size: 30, action: onSkipForward)
+        if supportsControl {
+            // Full playback buttons for controllable sources
+            HStack(spacing: 10) {
+                playbackButton(imageName: "backward.fill", size: 30, action: onSkipBack)
+                playPauseButton
+                playbackButton(imageName: "forward.fill", size: 30, action: onSkipForward)
+            }
+        } else {
+            // Non-controllable source: waveform indicator
+            Image(systemName: isPlaying ? "waveform" : "music.note")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
+                .foregroundStyle(.white.opacity(0.9))
+                .padding(.vertical, 10)
+                .symbolEffect(.variableColor.iterative, isActive: isPlaying)
+                .symbolRenderingMode(.hierarchical)
         }
     }
 

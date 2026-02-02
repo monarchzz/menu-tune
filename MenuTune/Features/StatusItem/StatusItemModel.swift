@@ -33,7 +33,7 @@ final class StatusItemModel {
     var artist: String = ""
     var title: String = ""
     var isPlaying: Bool = false
-    var playerIconName: String = "SpotifyIcon"
+    var playerIconName: String = "sf.music.note"
 
     private var cancellables = Set<AnyCancellable>()
 

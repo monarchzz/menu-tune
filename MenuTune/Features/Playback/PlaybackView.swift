@@ -54,21 +54,26 @@ struct PlaybackView: View {
         ZStack {
             // Artwork layer
             artworkView
-                .blur(radius: (isHovering && model.supportsControl) ? blurRadius : 0)
+                .blur(radius: shouldShowOverlay ? blurRadius : 0)
                 .overlay {
-                    if isHovering && model.supportsControl {
+                    if shouldShowOverlay {
                         hoverTintColor.opacity(preferences.hoverTintOpacity)
                             .transition(.opacity)
                     }
                 }
 
-            // Controls overlay (appears on hover, only for controllable sources)
-            if isHovering && model.supportsControl {
+            // Controls overlay (appears on hover when artwork is present)
+            if shouldShowOverlay {
                 controlsOverlay
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
         .animation(.spring(duration: 0.3, bounce: 0.1), value: isHovering)
+    }
+
+    /// Whether to show the controls overlay on hover (when artwork is present).
+    private var shouldShowOverlay: Bool {
+        isHovering && model.image != nil
     }
 
     // MARK: - Artwork View
@@ -196,27 +201,13 @@ struct PlaybackView: View {
     // MARK: - Center Controls
 
     private var centerControls: some View {
-        Group {
-            // Playback buttons (only for controllable sources)
-            if model.supportsControl {
-                PlaybackControlsView(
-                    isPlaying: model.isPlaying,
-                    onSkipBack: { model.skipBack() },
-                    onPlayPause: { model.togglePlayPause() },
-                    onSkipForward: { model.skipForward() }
-                )
-            } else {
-                // Non-controllable source: show music note indicator
-                Image(systemName: model.isPlaying ? "waveform" : "music.note")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 44, height: 44)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(.vertical, 10)
-                    .symbolEffect(.variableColor.iterative, isActive: model.isPlaying)
-                    .symbolRenderingMode(.hierarchical)
-            }
-        }
+        PlaybackControlsView(
+            isPlaying: model.isPlaying,
+            supportsControl: model.supportsControl,
+            onSkipBack: { model.skipBack() },
+            onPlayPause: { model.togglePlayPause() },
+            onSkipForward: { model.skipForward() }
+        )
     }
 
     // MARK: - Track Info
@@ -229,43 +220,42 @@ struct PlaybackView: View {
 
     @ViewBuilder
     private var bottomBar: some View {
-        if model.supportsControl {
-            HStack(alignment: .center, spacing: 8) {
-                // Current time
-                Text(formatTime(model.currentTime, styleMatching: model.totalTime))
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .contentTransition(.numericText())
-                    .animation(.spring(duration: 0.2), value: model.currentTime)
+        VStack(spacing: 8) {
+            // Progress bar with times (shown only for controllable sources)
+            if model.supportsControl {
+                HStack(alignment: .center, spacing: 8) {
+                    // Current time
+                    Text(formatTime(model.currentTime, styleMatching: model.totalTime))
+                        .font(.body.monospacedDigit())
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .contentTransition(.numericText())
+                        .animation(.spring(duration: 0.2), value: model.currentTime)
 
-                // Progress slider
-                CustomSlider(
-                    value: Binding(
-                        get: { model.currentTime },
-                        set: { model.updatePlaybackPosition(to: $0) }
-                    ),
-                    range: 0...model.totalTime,
-                    foregroundColor: .white,
-                    trackColor: .white
-                )
-                .frame(maxWidth: .infinity)
+                    // Progress slider
+                    CustomSlider(
+                        value: Binding(
+                            get: { model.currentTime },
+                            set: { model.updatePlaybackPosition(to: $0) }
+                        ),
+                        range: 0...max(model.totalTime, 1),
+                        foregroundColor: .white,
+                        trackColor: .white
+                    )
+                    .frame(maxWidth: .infinity)
 
-                // Total time
-                Text(formatTime(model.totalTime, styleMatching: model.totalTime))
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: true, vertical: false)
+                    // Total time
+                    Text(formatTime(model.totalTime, styleMatching: model.totalTime))
+                        .font(.body.monospacedDigit())
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
             }
-        } else {
-            // Non-controllable source: show source indicator
-            HStack {
-                Spacer()
-                Text(sourceLabel)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                Spacer()
-            }
+
+            Text(sourceLabel)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+
         }
     }
 
@@ -276,6 +266,10 @@ struct PlaybackView: View {
             return "Browser Playback"
         case .generic:
             return "External Playback"
+        case .appleMusic:
+            return "Apple Music"
+        case .spotify:
+            return "Spotify"
         default:
             return ""
         }
