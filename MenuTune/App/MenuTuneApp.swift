@@ -13,8 +13,6 @@ struct MenuTuneApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        // Hidden window - required by SwiftUI but never shown
-        // This removes the "Settings..." menu item from the app menu
         WindowGroup {
             EmptyView()
         }

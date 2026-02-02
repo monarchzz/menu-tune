@@ -184,6 +184,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(
             NSMenuItem(
                 title: "Preferences", action: #selector(preferencesAction), keyEquivalent: ","))
+        menu.addItem(
+            NSMenuItem(
+                title: "Check for Updates", action: #selector(checkForUpdatesAction),
+                keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(
             NSMenuItem(title: "Quit Menu Tune", action: #selector(quitAction), keyEquivalent: "q"))
@@ -207,6 +211,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Log.debug("Opening preferences", category: .app)
         popoverManager.dismiss()
         preferencesWindowController.showWindow(nil)
+    }
+
+    @objc private func checkForUpdatesAction() {
+        Log.debug("Checking for updates", category: .app)
+        popoverManager.dismiss()
+        if let url = URL(string: "https://github.com/monarchzz/menu-tune/releases") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc private func quitAction() {
