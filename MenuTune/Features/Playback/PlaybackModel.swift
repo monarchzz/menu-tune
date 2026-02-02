@@ -21,7 +21,6 @@ final class PlaybackModel {
 
     // MARK: - Observable Properties
 
-    var imageURL: URL?
     var image: NSImage?
     var isPlaying: Bool = false
     var title: String = ""
@@ -179,7 +178,6 @@ final class PlaybackModel {
         artist = ""
         album = ""
         isPlaying = false
-        imageURL = nil
         image = nil
         currentTime = 0
         totalTime = 1

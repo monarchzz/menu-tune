@@ -17,7 +17,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D8A7494A2F188BCB008974A9 /* MenuTune.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MenuTune.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8A7494A2F188BCB008974A9 /* MenuTune.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = MenuTune.app; path = "Menu Tune.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8A749682F188DDD008974A9 /* MenuTuneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MenuTuneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 

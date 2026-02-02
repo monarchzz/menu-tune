@@ -158,10 +158,10 @@ final class NowPlayingService {
             let sameArtist = prev.artist == info.artist
             let sameAlbum = prev.album == info.album
             let sameSource = prev.sourceAppBundleID == info.sourceAppBundleID
-            if sameTitle && sameArtist && sameAlbum && sameSource, let prevArtwork = prev.artworkID
+            if sameTitle && sameArtist && sameAlbum && sameSource
             {
                 shouldFetchArtwork = false
-                artworkID = prevArtwork
+                artworkID = prev.artworkID
             } else {
                 shouldFetchArtwork = true
             }
@@ -171,9 +171,8 @@ final class NowPlayingService {
 
         // Only fetch artwork for Spotify and Apple Music
         let playerType = PlayerType.from(bundleID: info.sourceAppBundleID)
-        let supportsArtwork = playerType == .spotify || playerType == .appleMusic
 
-        if shouldFetchArtwork && supportsArtwork {
+        if shouldFetchArtwork {
             // Fetch artwork (NowPlayingProvider.fetchArtwork ensures NSImage created on MainActor)
             let artworkData = await NowPlayingProvider.fetchArtworkData(for: playerType)
             if let data = artworkData {

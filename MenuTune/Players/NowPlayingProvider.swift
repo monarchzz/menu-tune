@@ -42,7 +42,6 @@ final class NowPlayingProvider {
     }
 
     /// Fetches artwork for the currently playing media as raw Data.
-    /// Only supports Spotify and Apple Music.
     /// - Parameter playerType: The player type to fetch artwork from.
     /// - Returns: Data if artwork is available, nil otherwise.
     static func fetchArtworkData(for playerType: PlayerType) async -> Data? {
@@ -56,7 +55,9 @@ final class NowPlayingProvider {
                 return image.tiffRepresentation
             }
             return nil
-        default:
+        case .browser, .generic:
+            return await ScriptService.shared.fetchGenericArtwork()
+        case .none:
             return nil
         }
     }

@@ -346,6 +346,36 @@ final class ScriptService {
         }.value
     }
 
+    /// - Returns: Image data if available, nil otherwise.
+    func fetchGenericArtwork() async -> Data? {
+        let script = """
+            use framework "Foundation"
+            use scripting additions
+
+            on run
+                set MediaRemotePath to "/System/Library/PrivateFrameworks/MediaRemote.framework"
+                set MediaRemoteBundle to current application's NSBundle's bundleWithPath:MediaRemotePath
+                MediaRemoteBundle's load()
+                
+                set MRNowPlayingRequestClass to current application's NSClassFromString("MRNowPlayingRequest")
+                set nowPlayingItem to MRNowPlayingRequestClass's localNowPlayingItem()
+                if nowPlayingItem is missing value then return ""
+                
+                set infoDict to nowPlayingItem's nowPlayingInfo()
+                set artworkData to (infoDict's valueForKey:"kMRMediaRemoteNowPlayingInfoArtworkData")
+                if artworkData is missing value then return ""
+                
+                set base64String to (artworkData's base64EncodedStringWithOptions:0) as text
+                return base64String
+            end run
+            """
+        guard let base64String = await runOsascript(script), !base64String.isEmpty else {
+            return nil
+        }
+
+        return Data(base64Encoded: base64String)
+    }
+
     // MARK: - Private Helpers
 
     /// Runs an AppleScriptObjC script via osascript (required for MediaRemote access).

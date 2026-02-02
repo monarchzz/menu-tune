@@ -75,27 +75,8 @@ struct PlaybackView: View {
 
     @ViewBuilder
     private var artworkView: some View {
-        if let url = model.imageURL {
-            // Spotify: Load from URL
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 300, height: 300)
-                        .clipped()
-                case .failure:
-                    fallbackArtwork
-                case .empty:
-                    ProgressView()
-                        .frame(width: 300, height: 300)
-                @unknown default:
-                    fallbackArtwork
-                }
-            }
-        } else if let nsImage = model.image {
-            // Apple Music: Use NSImage
+        if let nsImage = model.image {
+            // Display artwork from NSImage
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFill()
