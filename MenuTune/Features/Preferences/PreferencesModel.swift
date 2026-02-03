@@ -26,11 +26,6 @@ enum MenuBarFontWeight: String, CaseIterable, Identifiable {
     }
 }
 
-enum AppearanceTheme: String, CaseIterable, Identifiable {
-    case system, light, dark
-    var id: String { rawValue }
-}
-
 // MARK: - Preferences Model
 
 /// Observable model for user preferences, backed by UserDefaults.
@@ -85,9 +80,6 @@ final class PreferencesModel: ObservableObject {
 
     /// Opacity for the tint color (0.0 - 1.0).
     @AppStorage("hoverTintOpacity") var hoverTintOpacity: Double = 0.3
-
-    /// Theme for the player window foreground (System, Light, Dark).
-    @AppStorage("appearanceTheme") var appearanceTheme: AppearanceTheme = .system
 
     // MARK: - General Settings
 

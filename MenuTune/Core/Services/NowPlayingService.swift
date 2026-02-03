@@ -152,14 +152,13 @@ final class NowPlayingService {
 
         // Decide whether to fetch artwork: compare incoming metadata with last authoritative state
         var artworkID: String? = nil
-        let shouldFetchArtwork: Bool
+        var shouldFetchArtwork = true
         if let prev = subject.value {
             let sameTitle = prev.title == info.title
             let sameArtist = prev.artist == info.artist
             let sameAlbum = prev.album == info.album
             let sameSource = prev.sourceAppBundleID == info.sourceAppBundleID
-            if sameTitle && sameArtist && sameAlbum && sameSource
-            {
+            if sameTitle && sameArtist && sameAlbum && sameSource {
                 shouldFetchArtwork = false
                 artworkID = prev.artworkID
             } else {

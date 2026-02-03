@@ -81,20 +81,6 @@ final class PopoverWindow: NSPanel {
         contentView = containerView
     }
 
-    // MARK: - Appearance
-
-    /// Updates the window appearance based on preferences.
-    func updateAppearance(blurIntensity: Double, tintColorHex: String, theme: AppearanceTheme) {
-        switch theme {
-        case .system:
-            appearance = nil
-        case .light:
-            appearance = NSAppearance(named: .aqua)
-        case .dark:
-            appearance = NSAppearance(named: .darkAqua)
-        }
-    }
-
     // MARK: - Window Behavior
 
     override var canBecomeKey: Bool { true }

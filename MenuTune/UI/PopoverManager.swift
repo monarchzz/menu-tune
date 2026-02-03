@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Combine
 import SwiftUI
 
 // MARK: - Popover Manager
@@ -19,7 +18,6 @@ final class PopoverManager {
 
     private var window: PopoverWindow
     private let preferences: PreferencesModel
-    private var cancellables = Set<AnyCancellable>()
 
     /// Animation duration for show/hide transitions
     private let animationDuration: TimeInterval = 0.2
@@ -29,29 +27,6 @@ final class PopoverManager {
     init<Content: View>(contentView: Content, preferences: PreferencesModel) {
         self.window = PopoverWindow(rootView: contentView)
         self.preferences = preferences
-
-        setupObservers()
-        updateWindowAppearance()
-    }
-
-    // MARK: - Observers
-
-    private func setupObservers() {
-        preferences.objectWillChange
-            .receive(on: RunLoop.main)
-            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.updateWindowAppearance()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func updateWindowAppearance() {
-        window.updateAppearance(
-            blurIntensity: preferences.blurIntensity,
-            tintColorHex: preferences.hoverTintColorHex,
-            theme: preferences.appearanceTheme
-        )
     }
 
     // MARK: - Public Methods
