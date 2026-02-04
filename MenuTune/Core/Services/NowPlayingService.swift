@@ -25,6 +25,29 @@ struct NowPlayingState {
     var playerIconName: String {
         PlayerType.from(bundleID: sourceAppBundleID).iconName
     }
+
+    /// Returns a copy with specified fields overridden.
+    func copy(
+        title: String? = nil,
+        artist: String? = nil,
+        album: String?? = nil,
+        isPlaying: Bool? = nil,
+        sourceAppBundleID: String?? = nil,
+        artworkID: String?? = nil,
+        totalTime: Double? = nil,
+        currentTime: Double? = nil
+    ) -> NowPlayingState {
+        NowPlayingState(
+            title: title ?? self.title,
+            artist: artist ?? self.artist,
+            album: album ?? self.album,
+            isPlaying: isPlaying ?? self.isPlaying,
+            sourceAppBundleID: sourceAppBundleID ?? self.sourceAppBundleID,
+            artworkID: artworkID ?? self.artworkID,
+            totalTime: totalTime ?? self.totalTime,
+            currentTime: currentTime ?? self.currentTime
+        )
+    }
 }
 
 /// Playback actions supported by the service.
@@ -52,6 +75,7 @@ final class NowPlayingService {
 
     private var pollTask: Task<Void, Never>?
     private var pollIntervalSeconds: TimeInterval = 2
+    private var artworkFetchAttempts: Int = 0
 
     var isRunning: Bool { pollTask != nil }
 
@@ -97,46 +121,31 @@ final class NowPlayingService {
     func perform(_ action: PlaybackAction) async {
         // Build and publish optimistic state if available
         if let current = subject.value {
-            var optimistic = current
+            let optimistic: NowPlayingState
             switch action {
             case .togglePlayPause:
-                optimistic = NowPlayingState(
-                    title: current.title,
-                    artist: current.artist,
-                    album: current.album,
-                    isPlaying: !current.isPlaying,
-                    sourceAppBundleID: current.sourceAppBundleID,
-                    artworkID: current.artworkID,
-                    totalTime: current.totalTime,
-                    currentTime: current.currentTime
-                )
+                optimistic = current.copy(isPlaying: !current.isPlaying)
             case .next:
-                // Clear title/artist briefly to indicate change
-                optimistic = NowPlayingState(
-                    title: "…", artist: "", album: nil, isPlaying: current.isPlaying,
-                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil,
-                    totalTime: 0, currentTime: 0)
+                optimistic = current.copy(
+                    title: "…", artist: "", album: nil,
+                    artworkID: nil, totalTime: 0, currentTime: 0
+                )
             case .previous:
-                optimistic = NowPlayingState(
-                    title: "…", artist: "", album: nil, isPlaying: current.isPlaying,
-                    sourceAppBundleID: current.sourceAppBundleID, artworkID: nil,
-                    totalTime: 0, currentTime: 0)
-            case .seek(_):
-                // We don't change metadata for seek; no optimistic change for now
-                optimistic = current
+                optimistic = current.copy(
+                    title: "…", artist: "", album: nil,
+                    artworkID: nil, totalTime: 0, currentTime: 0
+                )
+            case .seek(let seconds):
+                optimistic = current.copy(currentTime: seconds)
             }
             subject.send(optimistic)
         }
 
-        // NOTE: NowPlayingService is player-agnostic and must NOT execute player-specific
-        // AppleScript commands. Controllers (e.g., SpotifyController, AppleMusicController)
-        // are responsible for executing playback commands. The service only publishes an
-        // optimistic state and schedules an authoritative refresh.
-
-        // Trigger a near-immediate authoritative refresh in background
-        Task.detached(priority: .userInitiated) { [weak self] in
-            try? await Task.sleep(nanoseconds: 250_000_000)
-            await self?.refreshNowPlaying()
+        Task { [weak self] in
+            guard let self else { return }
+            self.stop()
+            try? await Task.sleep(for: .milliseconds(500))
+            self.start()
         }
     }
 
@@ -153,25 +162,27 @@ final class NowPlayingService {
         // Decide whether to fetch artwork: compare incoming metadata with last authoritative state
         var artworkID: String? = nil
         var shouldFetchArtwork = true
-        if let prev = subject.value {
-            let sameTitle = prev.title == info.title
-            let sameArtist = prev.artist == info.artist
-            let sameAlbum = prev.album == info.album
-            let sameSource = prev.sourceAppBundleID == info.sourceAppBundleID
-            if sameTitle && sameArtist && sameAlbum && sameSource {
-                shouldFetchArtwork = false
-                artworkID = prev.artworkID
-            } else {
-                shouldFetchArtwork = true
-            }
+        let prev = subject.value
+        let sameTrack =
+            prev.map {
+                $0.title == info.title && $0.artist == info.artist && $0.album == info.album
+                    && $0.sourceAppBundleID == info.sourceAppBundleID
+            } ?? false
+
+        if sameTrack, let prev {
+            // Re-fetch if previous artwork was nil and we haven't exhausted attempts (max 2)
+            shouldFetchArtwork = prev.artworkID == nil && artworkFetchAttempts < 2
+            artworkID = prev.artworkID
         } else {
-            shouldFetchArtwork = true
+            // New track or first run: reset attempts counter
+            artworkFetchAttempts = 0
         }
 
         // Only fetch artwork for Spotify and Apple Music
         let playerType = PlayerType.from(bundleID: info.sourceAppBundleID)
 
         if shouldFetchArtwork {
+            artworkFetchAttempts += 1
             // Fetch artwork (NowPlayingProvider.fetchArtwork ensures NSImage created on MainActor)
             let artworkData = await NowPlayingProvider.fetchArtworkData(for: playerType)
             if let data = artworkData {
