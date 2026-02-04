@@ -59,6 +59,11 @@ final class PopoverManager {
         }
     }
 
+    /// Resizes the popover window to the specified size.
+    func resize(to size: CGSize) {
+        window.resize(to: size)
+    }
+
     // MARK: - Private Methods
 
     private func show(relativeTo button: NSStatusBarButton) {

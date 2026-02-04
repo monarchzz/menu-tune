@@ -12,6 +12,14 @@ import SwiftUI
 /// Main playback view with album artwork and controls overlay.
 struct PlaybackView: View {
 
+    // MARK: - Constants
+
+    private enum Layout {
+        static let baseWidth: CGFloat = 300
+        static let minHeight: CGFloat = 200
+        static let maxHeight: CGFloat = 300
+    }
+
     // MARK: - Properties
 
     var model: PlaybackModel
@@ -19,21 +27,65 @@ struct PlaybackView: View {
     @State private var isHovering = false
 
     var onOpenPreferences: (() -> Void)?
+    var onResize: ((CGSize) -> Void)?
 
     // MARK: - Body
 
     var body: some View {
         content
-            .frame(width: 300, height: 300)
+            .frame(width: viewSize.width, height: viewSize.height)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .onHover { hovering in
                 withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
                     isHovering = hovering
                 }
             }
+            .frame(width: viewSize.width, height: viewSize.height)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .onHover { hovering in
+                withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+                    isHovering = hovering
+                }
+            }
+            .onChange(of: viewSize) { _, newSize in
+                Log.debug("Requesting resize to: \(newSize.width)x\(newSize.height)", category: .ui)
+                onResize?(newSize)
+            }
+            .onAppear {
+                Log.debug("Initial view size: \(viewSize.width)x\(viewSize.height)", category: .ui)
+                onResize?(viewSize)
+            }
     }
 
     // MARK: - Computed Properties
+
+    // MARK: - Computed Properties
+
+    /// Dynamic view size based on artwork aspect ratio.
+    /// - Standard: Width 300, Height = 300 / AspectRatio.
+    /// - Min Height Check: If Height < 150, Width scales up to maintain AR.
+    /// - Max Height Constraint: Height capped at 300.
+    private var viewSize: CGSize {
+        guard let image = model.image, image.size.height > 0, image.size.width > 0 else {
+            return CGSize(width: Layout.baseWidth, height: Layout.maxHeight)
+        }
+
+        let aspectRatio = image.size.width / image.size.height
+
+        // Calculate height at base width
+        let heightAtBaseWidth = Layout.baseWidth / aspectRatio
+
+        if heightAtBaseWidth < Layout.minHeight {
+            // Too short (wide panoramic image), enforce min height and scale width
+            // Height = Width / AR  =>  Width = Height * AR
+            let newWidth = Layout.minHeight * aspectRatio
+            return CGSize(width: newWidth, height: Layout.minHeight)
+        } else {
+            // Sufficient height or too tall (portrait)
+            // Cap height at max height
+            return CGSize(width: Layout.baseWidth, height: min(heightAtBaseWidth, Layout.maxHeight))
+        }
+    }
 
     private var hoverTintColor: Color {
         if let color = Color(hex: preferences.hoverTintColorHex) {
@@ -81,11 +133,11 @@ struct PlaybackView: View {
     @ViewBuilder
     private var artworkView: some View {
         if let nsImage = model.image {
-            // Display artwork from NSImage
+            // Display artwork with dynamic size
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 300, height: 300)
+                .frame(width: viewSize.width, height: viewSize.height)
                 .clipped()
         } else {
             fallbackArtwork
@@ -126,7 +178,7 @@ struct PlaybackView: View {
             }
             .padding(16)
         }
-        .frame(width: 300, height: 300)
+        .frame(width: Layout.baseWidth, height: Layout.baseWidth)  // Square fallback
     }
 
     // MARK: - Controls Overlay

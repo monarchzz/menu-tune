@@ -85,4 +85,28 @@ final class PopoverWindow: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    // MARK: - Resizing
+
+    /// Resize the window to the specified content size, keeping the top-left corner fixed.
+    /// - Parameter size: The new content size.
+    func resize(to size: NSSize) {
+        guard size != self.frame.size else { return }
+
+        let currentFrame = self.frame
+        let heightDelta = size.height - currentFrame.height
+
+        // Adjust Y origin to keep the top edge fixed
+        // (New Y) = (Old Y) - (Height Increase)
+        let newY = currentFrame.origin.y - heightDelta
+
+        let newFrame = NSRect(
+            x: currentFrame.origin.x,
+            y: newY,
+            width: size.width,
+            height: size.height
+        )
+
+        self.setFrame(newFrame, display: true, animate: true)
+    }
 }

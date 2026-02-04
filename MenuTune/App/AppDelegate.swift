@@ -94,6 +94,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: preferences,
             onOpenPreferences: { [weak self] in
                 self?.preferencesAction()
+            },
+            onResize: { [weak self] (size: CGSize) in
+                self?.popoverManager.resize(to: size)
             }
         )
         popoverManager = PopoverManager(contentView: playbackView, preferences: preferences)
