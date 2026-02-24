@@ -7,7 +7,6 @@
 
 import AppKit
 import Combine
-import CryptoKit
 import Foundation
 import SwiftUI
 
@@ -18,7 +17,7 @@ struct NowPlayingState {
     let album: String?
     let isPlaying: Bool
     let sourceAppBundleID: String?
-    let artworkID: String?
+    let artwork: NSImage?
     let totalTime: Double
     let currentTime: Double
 
@@ -33,7 +32,7 @@ struct NowPlayingState {
         album: String?? = nil,
         isPlaying: Bool? = nil,
         sourceAppBundleID: String?? = nil,
-        artworkID: String?? = nil,
+        artwork: NSImage?? = nil,
         totalTime: Double? = nil,
         currentTime: Double? = nil
     ) -> NowPlayingState {
@@ -43,7 +42,7 @@ struct NowPlayingState {
             album: album ?? self.album,
             isPlaying: isPlaying ?? self.isPlaying,
             sourceAppBundleID: sourceAppBundleID ?? self.sourceAppBundleID,
-            artworkID: artworkID ?? self.artworkID,
+            artwork: artwork ?? self.artwork,
             totalTime: totalTime ?? self.totalTime,
             currentTime: currentTime ?? self.currentTime
         )
@@ -75,7 +74,6 @@ final class NowPlayingService {
 
     private var pollTask: Task<Void, Never>?
     private var pollIntervalSeconds: TimeInterval = 2
-    private var artworkFetchAttempts: Int = 0
 
     var isRunning: Bool { pollTask != nil }
 
@@ -128,12 +126,12 @@ final class NowPlayingService {
             case .next:
                 optimistic = current.copy(
                     title: "…", artist: "", album: nil,
-                    artworkID: nil, totalTime: 0, currentTime: 0
+                    artwork: nil, totalTime: 0, currentTime: 0
                 )
             case .previous:
                 optimistic = current.copy(
                     title: "…", artist: "", album: nil,
-                    artworkID: nil, totalTime: 0, currentTime: 0
+                    artwork: nil, totalTime: 0, currentTime: 0
                 )
             case .seek(let seconds):
                 optimistic = current.copy(currentTime: seconds)
@@ -151,17 +149,12 @@ final class NowPlayingService {
 
     // MARK: - Refresh
 
-    /// Fetches authoritative now-playing info and publishes it.
-    func refreshNowPlaying() async {
-        // Fetch core info
+    private func refreshNowPlaying() async {
         guard let info = await NowPlayingProvider.fetchNowPlayingInfo() else {
             await MainActor.run { subject.send(nil) }
             return
         }
 
-        // Decide whether to fetch artwork: compare incoming metadata with last authoritative state
-        var artworkID: String? = nil
-        var shouldFetchArtwork = true
         let prev = subject.value
         let sameTrack =
             prev.map {
@@ -169,30 +162,11 @@ final class NowPlayingService {
                     && $0.sourceAppBundleID == info.sourceAppBundleID
             } ?? false
 
-        if sameTrack, let prev {
-            // Re-fetch if previous artwork was nil and we haven't exhausted attempts (max 2)
-            shouldFetchArtwork = prev.artworkID == nil && artworkFetchAttempts < 2
-            artworkID = prev.artworkID
+        let artwork: NSImage?
+        if sameTrack {
+            artwork = prev?.artwork
         } else {
-            // New track or first run: reset attempts counter
-            artworkFetchAttempts = 0
-        }
-
-        // Only fetch artwork for Spotify and Apple Music
-        let playerType = PlayerType.from(bundleID: info.sourceAppBundleID)
-
-        if shouldFetchArtwork {
-            artworkFetchAttempts += 1
-            // Fetch artwork (NowPlayingProvider.fetchArtwork ensures NSImage created on MainActor)
-            let artworkData = await NowPlayingProvider.fetchArtworkData(for: playerType)
-            if let data = artworkData {
-                // Use a deterministic artwork ID derived from metadata (title|artist|album|source)
-                let key = Self.artworkKey(from: info)
-                artworkID = key
-                Task.detached {
-                    try? await ArtworkCache.shared.save(data: data, for: key)
-                }
-            }
+            artwork = await fetchArtworkImage(bundleID: info.sourceAppBundleID)
         }
 
         let state = NowPlayingState(
@@ -201,7 +175,7 @@ final class NowPlayingService {
             album: info.album,
             isPlaying: info.isPlaying,
             sourceAppBundleID: info.sourceAppBundleID,
-            artworkID: artworkID,
+            artwork: artwork,
             totalTime: info.totalTime,
             currentTime: info.currentTime
         )
@@ -209,10 +183,23 @@ final class NowPlayingService {
         await MainActor.run { subject.send(state) }
     }
 
-    private static func artworkKey(from info: NowPlayingInfo) -> String {
-        let components = [info.title, info.artist, info.album ?? "", info.sourceAppBundleID ?? ""]
-            .joined(separator: "|")
-        let digest = SHA256.hash(data: Data(components.utf8))
-        return digest.map { String(format: "%02x", $0) }.joined()
+    func refresh() async {
+        await refreshNowPlaying()
+        await refreshArtwork()
     }
+
+    private func refreshArtwork() async {
+        guard let current = subject.value else { return }
+        let image = await fetchArtworkImage(bundleID: current.sourceAppBundleID)
+        await MainActor.run {
+            subject.send(current.copy(artwork: image))
+        }
+    }
+
+    private func fetchArtworkImage(bundleID: String?) async -> NSImage? {
+        let playerType = PlayerType.from(bundleID: bundleID)
+        let data = await NowPlayingProvider.fetchArtworkData(for: playerType)
+        return await MainActor.run { data.flatMap { NSImage(data: $0) } }
+    }
+
 }

@@ -31,17 +31,8 @@ final class PopoverManager {
 
     // MARK: - Public Methods
 
-    /// Toggles the popover visibility relative to the status bar button.
-    func toggle(relativeTo button: NSStatusBarButton?) {
-        guard let button else { return }
-
-        if window.isVisible {
-            dismiss()
-        } else {
-            show(relativeTo: button)
-        }
-
-    }
+    /// Whether the popover window is currently visible.
+    var isVisible: Bool { window.isVisible }
 
     /// Dismisses the popover with animation.
     func dismiss() {
@@ -66,7 +57,8 @@ final class PopoverManager {
 
     // MARK: - Private Methods
 
-    private func show(relativeTo button: NSStatusBarButton) {
+    func show(relativeTo button: NSStatusBarButton?) {
+        guard let button else { return }
         guard let buttonWindow = button.window,
             let screen = buttonWindow.screen
         else { return }

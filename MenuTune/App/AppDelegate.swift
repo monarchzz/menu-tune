@@ -176,7 +176,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func togglePopover() {
-        popoverManager.toggle(relativeTo: statusItem.button)
+        if popoverManager.isVisible {
+            popoverManager.dismiss()
+        } else {
+            popoverManager.show(relativeTo: statusItem.button)
+            Task { @MainActor in
+                await NowPlayingService.shared.refresh()
+            }
+        }
     }
 
     private func showContextMenu() {
@@ -206,7 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func refreshAction() {
         Log.debug("Manual refresh requested", category: .app)
         Task { @MainActor in
-            await playbackModel.fetchInfo()
+            await NowPlayingService.shared.refresh()
         }
     }
 

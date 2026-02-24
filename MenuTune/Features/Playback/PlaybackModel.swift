@@ -35,7 +35,6 @@ final class PlaybackModel {
 
     private var controller: (any MusicPlayerController)?
     private var cancellables = Set<AnyCancellable>()
-    private var currentArtworkID: String?
 
     /// Returns true if the current source supports playback controls.
     var supportsControl: Bool {
@@ -62,11 +61,6 @@ final class PlaybackModel {
     }
 
     // MARK: - Public Methods
-
-    /// Fetches current playback info on demand.
-    func fetchInfo() async {
-        await NowPlayingService.shared.refreshNowPlaying()
-    }
 
     /// Toggles between play and pause (only for controllable sources).
     func togglePlayPause() {
@@ -131,18 +125,7 @@ final class PlaybackModel {
         totalTime = state.totalTime > 0 ? state.totalTime : 1
         currentTime = state.currentTime
 
-        // Load artwork from cache if artworkID changed
-        if state.artworkID != currentArtworkID {
-            currentArtworkID = state.artworkID
-            Task { @MainActor in
-                if let artID = state.artworkID {
-                    let img = await ArtworkCache.shared.image(for: artID)
-                    self.image = img
-                } else {
-                    self.image = nil
-                }
-            }
-        }
+        image = state.artwork
 
         let newPlayerType = PlayerType.from(bundleID: state.sourceAppBundleID)
         if newPlayerType.supportsControl {
