@@ -56,7 +56,8 @@ final class NowPlayingProvider {
             }
             return nil
         case .browser, .generic:
-            return await MediaRemoteService.shared.fetchArtworkData()
+            // TODO: implement generic artwork fetching
+            return nil
         case .none:
             return nil
         }
